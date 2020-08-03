@@ -1,1 +1,3 @@
-# jte_configuration
+#
+jte_configuration
+. sample JTE

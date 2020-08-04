@@ -6,5 +6,4 @@
 */
 libraries{
   merge = true 
-  sonarqube
 }

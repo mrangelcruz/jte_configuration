@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-db-bootstrap
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-bootstrap
+          image: docker.io/bitnamilegacy/postgresql:16.6.0-debian-12-r2
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-postgresql
+                  key: postgres-password
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Waiting for Postgres to be ready..."
+              until /opt/bitnami/postgresql/bin/pg_isready -h postgres-postgresql -p 5432 -U postgres; do
+                sleep 3
+              done
+
+              echo "Running bootstrap SQL..."
+              /opt/bitnami/postgresql/bin/psql \
+                -h postgres-postgresql \
+                -U postgres \
+                -d postgres \
+                -f /bootstrap/bootstrap.sql
+          volumeMounts:
+            - name: bootstrap-sql
+              mountPath: /bootstrap
+      volumes:
+        - name: bootstrap-sql
+          configMap:
+            name: postgres-db-bootstrap

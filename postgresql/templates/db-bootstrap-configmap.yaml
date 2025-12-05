@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-db-bootstrap
+data:
+  bootstrap.sql: |
+    -- 1) Ensure 'trino' role exists
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT FROM pg_roles WHERE rolname = 'trino'
+      ) THEN
+        CREATE ROLE trino WITH LOGIN PASSWORD 'trino_password';
+      END IF;
+    END
+    $$;
+
+    -- 2) Ensure 'superset' role exists
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT FROM pg_roles WHERE rolname = 'superset'
+      ) THEN
+        CREATE ROLE superset WITH LOGIN PASSWORD 'superset_password';
+      END IF;
+    END
+    $$;
+
+    -- 3) Ensure 'ranger' DB exists (use psql \gexec)
+    SELECT 'CREATE DATABASE ranger OWNER trino'
+    WHERE NOT EXISTS (
+      SELECT FROM pg_database WHERE datname = 'ranger'
+    )\gexec
+
+    -- 4) Ensure 'superset' DB exists (use psql \gexec)
+    SELECT 'CREATE DATABASE superset OWNER superset'
+    WHERE NOT EXISTS (
+      SELECT FROM pg_database WHERE datname = 'superset'
+    )\gexec
